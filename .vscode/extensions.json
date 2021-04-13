@@ -1,0 +1,14 @@
+{
+	"recommendations": [
+		"ms-vscode.cpptools",
+		"editorconfig.editorconfig",
+		"ms-python.python",
+		"yzhang.markdown-all-in-one"
+	],
+	"unwantedRecommendations": [
+		"ms-vscode.cpptools-extension-pack",
+		"github.vscode-pull-request-github",
+		"eamodio.gitlens",
+		"felipecaputo.git-project-manager",
+	]
+}

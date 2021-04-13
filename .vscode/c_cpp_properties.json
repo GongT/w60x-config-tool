@@ -1,0 +1,29 @@
+{
+	"configurations": [
+		{
+			"name": "default",
+			"compilerPath": "${config:RTT_EXEC_PATH}/arm-none-eabi-gcc",
+			"compilerArgs": [
+				"-mcpu=cortex-m3",
+				"-mthumb",
+				"-ffunction-sections",
+				"-fdata-sections",
+				"-std=gnu99",
+				"-w",
+				"-fno-common",
+				"-fomit-frame-pointer",
+				"-fno-short-enums",
+				"-fsigned-char"
+			],
+			"compileCommands": "${workspaceFolder}/.vscode/compile_commands.json",
+			"forcedInclude": [
+				"${workspaceFolder}/rtconfig.h",
+			],
+			"includePath": [
+				"${config:RTT_ROOT}/include",
+				"${workspaceFolder}",
+			]
+		}
+	],
+	"version": 4
+}

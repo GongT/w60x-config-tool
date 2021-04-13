@@ -1,0 +1,39 @@
+{
+	/* ARM GCC 路径（到bin目录） */
+	"RTT_EXEC_PATH": "/opt/arm/gcc-arm-none-eabi-10-2020-q4-major/bin/",
+	/* RT-Thread内核源码根目录 */
+	"RTT_ROOT": "/data/DevelopmentRoot/github.com/RT-Thread/rt-thread/",
+	/* env工具目录 */
+	"ENV_ROOT": "/root/.env",
+	/* 当运行生成任务（中的刷写）时，默认使用的端口号，例如COM11就写11 */
+	"serialPortNumber": 0,
+	"terminal.integrated.env.linux": {
+		"RTT_EXEC_PATH": "${config:RTT_EXEC_PATH}",
+		"RTT_ROOT": "${config:RTT_ROOT}",
+		"ENV_ROOT": "${config:ENV_ROOT}",
+	},
+	"files.associations": {
+		"*.h": "c",
+		"SConscript": "python",
+		"SConstruct": "python",
+	},
+	"files.exclude": {
+		"**/.git": true,
+		"build": true,
+		"__pycache__": true,
+		"**/*.dblite": true,
+		"**/*.dbsqlite": true,
+		"rtthread-*.map": true,
+		"**/.DS_Store": true
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "vscode.json-language-features",
+		"editor.formatOnSave": true,
+		"editor.formatOnSaveMode": "file",
+	},
+	"[c]": {
+		"editor.defaultFormatter": "ms-vscode.cpptools",
+		"editor.formatOnSave": true,
+		"editor.formatOnSaveMode": "modifications",
+	}
+}

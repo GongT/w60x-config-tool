@@ -1,0 +1,17 @@
+*.pyc
+*.map
+*.dblite
+*.old
+*.bin
+*.elf
+*.bak
+.tmp
+build
+Bin
+Debug
+__pycache__
+packages/
+.DS_Stor*
+.vscode/compile_commands.json
+/rt-thread
+/drivers

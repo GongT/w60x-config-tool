@@ -1,0 +1,8 @@
+mainmenu "RT-Thread Configuration"
+
+config BSP_ROOT
+    string
+    option env="BSP_ROOT"
+    default "./rt-thread/bsp/w60x/"
+
+source "$BSP_ROOT/Kconfig"

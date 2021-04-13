@@ -1,0 +1,96 @@
+{
+	// See https://go.microsoft.com/fwlink/?LinkId=733558
+	// for the documentation about the tasks.json format
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "create compile_commands.json",
+			"type": "shell",
+			"command": "scons -Q cdb",
+			"problemMatcher": [],
+			"options": {
+				"env": {
+					"RTT_ROOT": "${config:RTT_ROOT}",
+					"ENV_ROOT": "${config:ENV_ROOT}",
+					"RTT_EXEC_PATH": "${config:RTT_EXEC_PATH}",
+				}
+			},
+			"runOptions": {
+				"runOn": "folderOpen",
+				"reevaluateOnRerun": true
+			},
+		},
+		{
+			"label": "Make",
+			"type": "shell",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"problemMatcher": "$gcc",
+			"command": "scons",
+			"options": {
+				"env": {
+					"RTT_ROOT": "${config:RTT_ROOT}",
+					"ENV_ROOT": "${config:ENV_ROOT}",
+					"RTT_EXEC_PATH": "${config:RTT_EXEC_PATH}",
+				}
+			},
+			"runOptions": {
+				"reevaluateOnRerun": true
+			},
+		},
+		{
+			"label": "Menu Config",
+			"type": "shell",
+			"problemMatcher": [],
+			"command": "scons --menuconfig",
+			"options": {
+				"env": {
+					"RTT_ROOT": "${config:RTT_ROOT}",
+					"ENV_ROOT": "${config:ENV_ROOT}",
+					"RTT_EXEC_PATH": "${config:RTT_EXEC_PATH}",
+				}
+			},
+			"runOptions": {
+				"reevaluateOnRerun": true
+			},
+		},
+		{
+			"label": "Flash",
+			"type": "shell",
+			"problemMatcher": [],
+			"command": "python",
+			"args": [
+				"serialport.py",
+				"flash",
+			],
+			"options": {
+				"env": {
+					"SERIAL_PORT_NUMBER": "${config:serialPortNumber}"
+				}
+			},
+			"runOptions": {
+				"reevaluateOnRerun": true
+			},
+		},
+		{
+			"label": "Monitor",
+			"type": "shell",
+			"problemMatcher": [],
+			"command": "python",
+			"args": [
+				"serialport.py",
+				"term",
+			],
+			"options": {
+				"env": {
+					"SERIAL_PORT_NUMBER": "${config:serialPortNumber}"
+				}
+			},
+			"runOptions": {
+				"reevaluateOnRerun": true
+			},
+		}
+	]
+}
