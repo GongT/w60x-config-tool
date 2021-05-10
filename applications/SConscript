@@ -1,12 +1,24 @@
-Import('RTT_ROOT')
-Import('rtconfig')
-from building import *
+from building import DefineGroup
+from os.path import join
 
-cwd = GetCurrentDir()
-src	= Glob('**/*.c')
-src	+= Glob('*.c')
-CPPPATH = [cwd]
+src = Glob('**/*.c')
+src += Glob('*.c')
 
-group = DefineGroup('Applications', src, depend = [''], CPPPATH = CPPPATH)
+gcc_warn_flag = [
+    'extra',
+    'undef',
+    'missing-declarations',
+    'redundant-decls',
+    'unreachable-code',
+    'inline',
+    'disabled-optimization',
+    'error=implicit-function-declaration',
+    'no-unused-parameter',
+]
+
+group = DefineGroup('Applications',
+                    src,
+                    depend=[''],
+                    LOCAL_CCFLAGS=' -W' + ' -W'.join(gcc_warn_flag) + ' ')
 
 Return('group')

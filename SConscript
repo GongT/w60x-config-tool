@@ -1,17 +1,27 @@
 # for module compiling
 import os
-Import('RTT_ROOT')
-Import('BSP_ROOT')
+from building import DefineGroup
 
-cwd = str(Dir('#'))
-objs = []
-list = os.listdir(cwd)
+try:
+    Import('PROJECT_ROOT')
+except:
+    PROJECT_ROOT = '//:/path/never/exists'
 
-for d in list:
-    path = os.path.join(cwd, d)
-    if os.path.isfile(os.path.join(path, 'SConscript')):
-        objs = objs + SConscript(os.path.join(d, 'SConscript'))
+__file__ = os.path.abspath((lambda x: x).__code__.co_filename)
+__dir__ = os.path.dirname(__file__)
+if os.path.abspath(PROJECT_ROOT) == __dir__:
+    # building this project
+    Import('env')
+    print('building w60x-config-tool as server')
+    Import('IncludeChilds')
 
-objs = objs + SConscript(os.path.join(BSP_ROOT, 'drivers/SConscript'))
+    env.AppendUnique(CPPPATH =[os.path.join(__dir__, 'library/shared')])
+    objs = []
+    objs += IncludeChilds(__dir__)
+else:
+    # building as a library (client)
+    objs = SConscript(os.path.join(__dir__, 'library/include.py'),
+                      variant_dir='w60x-config-tool',
+                      duplicate=0)
 
 Return('objs')

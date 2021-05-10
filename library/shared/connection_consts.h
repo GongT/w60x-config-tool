@@ -1,0 +1,8 @@
+#pragma once
+
+#define CONFIG_SERVER_SSID "gongt-config"
+#define CONFIG_WIFI_PASS NULL
+#define CONFIG_SERVER_IP_HOST "192.168.1.1"
+#define CONFIG_SERVER_IP_PORT 39000
+#define CONFIG_MAX_KEY_SIZE 64
+#define CONFIG_MAX_VALUE_SIZE 512

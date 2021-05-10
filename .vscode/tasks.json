@@ -1,96 +1,109 @@
 {
-	// See https://go.microsoft.com/fwlink/?LinkId=733558
-	// for the documentation about the tasks.json format
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "create compile_commands.json",
-			"type": "shell",
-			"command": "scons -Q cdb",
+			"id": "cdb",
+			"label": "刷新compile_commands.json",
+			"type": "process",
 			"problemMatcher": [],
-			"options": {
-				"env": {
-					"RTT_ROOT": "${config:RTT_ROOT}",
-					"ENV_ROOT": "${config:ENV_ROOT}",
-					"RTT_EXEC_PATH": "${config:RTT_EXEC_PATH}",
-				}
-			},
-			"runOptions": {
-				"runOn": "folderOpen",
-				"reevaluateOnRerun": true
-			},
+			"command": "python",
+			"args": [
+				"control.py",
+				"scons",
+				"cdb",
+			],
+			"# class": "rt-thread-w60x",
+			"# comment": "这个项目是自动生成的，不要修改",
 		},
 		{
-			"label": "Make",
-			"type": "shell",
+			"id": "make",
+			"label": "🔨构建",
+			"type": "process",
 			"group": {
 				"kind": "build",
-				"isDefault": true
+				"isDefault": true,
 			},
+			"presentation": {
+				"clear": true,
+			},
+			"isBuildCommand": true,
 			"problemMatcher": "$gcc",
-			"command": "scons",
-			"options": {
-				"env": {
-					"RTT_ROOT": "${config:RTT_ROOT}",
-					"ENV_ROOT": "${config:ENV_ROOT}",
-					"RTT_EXEC_PATH": "${config:RTT_EXEC_PATH}",
-				}
-			},
-			"runOptions": {
-				"reevaluateOnRerun": true
-			},
+			"command": "python",
+			"args": [
+				"control.py",
+				"scons",
+			],
+			"# class": "rt-thread-w60x",
+			"# comment": "这个项目是自动生成的，不要修改",
 		},
 		{
-			"label": "Menu Config",
-			"type": "shell",
-			"problemMatcher": [],
-			"command": "scons --menuconfig",
-			"options": {
-				"env": {
-					"RTT_ROOT": "${config:RTT_ROOT}",
-					"ENV_ROOT": "${config:ENV_ROOT}",
-					"RTT_EXEC_PATH": "${config:RTT_EXEC_PATH}",
-				}
-			},
-			"runOptions": {
-				"reevaluateOnRerun": true
-			},
-		},
-		{
-			"label": "Flash",
-			"type": "shell",
+			"id": "menuconfig",
+			"label": "运行MenuConfig",
+			"type": "process",
 			"problemMatcher": [],
 			"command": "python",
 			"args": [
-				"serialport.py",
+				"control.py",
+				"config",
+			],
+			"# class": "rt-thread-w60x",
+			"# comment": "这个项目是自动生成的，不要修改",
+		},
+		{
+			"id": "flash",
+			"label": "刷机",
+			"type": "process",
+			"problemMatcher": [],
+			"command": "python",
+			"args": [
+				"control.py",
 				"flash",
 			],
-			"options": {
-				"env": {
-					"SERIAL_PORT_NUMBER": "${config:serialPortNumber}"
-				}
-			},
-			"runOptions": {
-				"reevaluateOnRerun": true
-			},
+			"# class": "rt-thread-w60x",
+			"# comment": "这个项目是自动生成的，不要修改",
 		},
 		{
-			"label": "Monitor",
-			"type": "shell",
+			"id": "build-flash-term",
+			"isTestCommand": true,
+			"label": "构建、刷机并启动串口监视器",
+			"type": "process",
 			"problemMatcher": [],
 			"command": "python",
 			"args": [
-				"serialport.py",
+				"control.py",
+				"flashterm",
+			],
+			"dependsOn": [
+				"🔨构建",
+			],
+			"# class": "rt-thread-w60x",
+			"# comment": "这个项目是自动生成的，不要修改",
+		},
+		{
+			"id": "flash-term",
+			"label": "▶刷机并启动串口监视器",
+			"type": "process",
+			"problemMatcher": [],
+			"command": "python",
+			"args": [
+				"control.py",
+				"flashterm",
+			],
+			"# class": "rt-thread-w60x",
+			"# comment": "这个项目是自动生成的，不要修改",
+		},
+		{
+			"id": "term",
+			"label": "串口监视器",
+			"type": "process",
+			"problemMatcher": [],
+			"command": "python",
+			"args": [
+				"control.py",
 				"term",
 			],
-			"options": {
-				"env": {
-					"SERIAL_PORT_NUMBER": "${config:serialPortNumber}"
-				}
-			},
-			"runOptions": {
-				"reevaluateOnRerun": true
-			},
-		}
-	]
+			"# class": "rt-thread-w60x",
+			"# comment": "这个项目是自动生成的，不要修改",
+		},
+	],
 }
