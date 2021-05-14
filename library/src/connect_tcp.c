@@ -6,6 +6,15 @@
 
 static int config_socket = -1;
 
+rt_err_t config_mode_disconnect_tcp()
+{
+	if (config_socket >= 0)
+	{
+		closesocket(config_socket);
+		config_socket = -1;
+	}
+}
+
 rt_err_t config_mode_connect_tcp()
 {
 	if (config_socket >= 0)

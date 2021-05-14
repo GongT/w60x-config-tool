@@ -23,4 +23,6 @@ __attribute__((always_inline)) inline static int str_prefix(const char *pre, siz
 
 const char *config_request_data(const char *const name);
 rt_err_t config_mode_connect_tcp();
+rt_err_t config_mode_disconnect_tcp();
 rt_err_t config_mode_connect_wifi();
+rt_err_t config_mode_disconnect_wifi();

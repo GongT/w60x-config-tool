@@ -4,6 +4,16 @@
 #include <sys/socket.h>
 #include <netdev.h>
 
+rt_err_t config_mode_disconnect_wifi()
+{
+	rt_wlan_scan_result_clean();
+	struct netdev *dev = netdev_get_by_name("w0");
+	if (dev != NULL)
+		netdev_dhcp_enabled(dev, 0);
+
+	rt_wlan_disconnect();
+}
+
 rt_err_t config_mode_connect_wifi()
 {
 	rt_wlan_set_mode(RT_WLAN_DEVICE_STA_NAME, RT_WLAN_STATION);
@@ -38,10 +48,10 @@ rt_err_t config_mode_connect_wifi()
 				continue;
 			}
 
-			if (str_prefix((char*)ele->ssid.val, sizeof(CONFIG_SERVER_SSID), CONFIG_SERVER_SSID) == 0)
+			if (str_prefix((char *)ele->ssid.val, sizeof(CONFIG_SERVER_SSID), CONFIG_SERVER_SSID) == 0)
 			{
 				LOG_D("  * %.*s - yes", ele->ssid.len, ele->ssid.val);
-				strncpy(config_wifi_ssid, (char*)ele->ssid.val, ele->ssid.len);
+				strncpy(config_wifi_ssid, (char *)ele->ssid.val, ele->ssid.len);
 				break;
 			}
 			LOG_D("  * %.*s - not related", ele->ssid.len, ele->ssid.val);
