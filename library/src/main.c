@@ -3,7 +3,7 @@
 #include "private.h"
 #include <rthw.h>
 
-inline static void reboot()
+__attribute__((noreturn)) inline static void reboot()
 {
 
 	for (int i = 5; i > 0; i--)
@@ -20,6 +20,7 @@ inline static void reboot()
 static int goto_config_mode_inner(rt_bool_t done_reboot)
 {
 	LOG_I("Entering config mode...");
+	config_mode_status_hook(CONFIG_STATUS_INIT);
 
 	if (!rt_wlan_is_ready())
 	{
@@ -40,12 +41,13 @@ static int goto_config_mode_inner(rt_bool_t done_reboot)
 		return 1;
 	}
 
-do{
-	FOREACH_CONFIG(item)
+	do
 	{
-		LOG_I(" * %s", item);
+		FOREACH_CONFIG(item)
+		{
+			LOG_I(" * %s", item);
 		}
-}while(0);
+	} while (0);
 
 	FOREACH_CONFIG(item)
 	{
@@ -80,16 +82,18 @@ __attribute__((weak)) void config_mode_status_hook(enum CONFIG_STATUS pos)
 {
 }
 
-__attribute__((always_inline)) inline void goto_config_mode()
+__attribute__((noreturn)) void goto_config_mode()
 {
 	goto_config_mode_inner(RT_TRUE);
+	while (1)
+		;
 }
 
 #ifdef RT_USING_FINSH
 #include <finsh.h>
 static int goto_config_mode_shell(void)
 {
-	if (!rt_wlan_is_connected())
+	if (rt_wlan_is_connected())
 	{
 		LOG_I("WiFi disconnect...");
 		if (rt_wlan_disconnect() != RT_EOK)

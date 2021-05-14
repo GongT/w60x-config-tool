@@ -5,6 +5,7 @@
 enum CONFIG_STATUS
 {
 	CONFIG_STATUS_NONE,
+	CONFIG_STATUS_INIT,
 	CONFIG_STATUS_WIFI_FAIL,
 	CONFIG_STATUS_TCP_FAIL,
 	CONFIG_STATUS_ITEM_MISSING,
@@ -24,7 +25,7 @@ extern void config_mode_status_hook(enum CONFIG_STATUS pos);
 	const char *PTR_NAME = config_names[0]; \
 	for (const char *const *__ptr_element = config_names; PTR_NAME != NULL; __ptr_element++, PTR_NAME = *__ptr_element)
 
-void goto_config_mode();
+__attribute__((noreturn)) void goto_config_mode();
 void wifi_status_dump();
 
 #define CONFIG_END_CLOSE "{__end__}"

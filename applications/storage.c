@@ -12,6 +12,8 @@ extern const struct dfs_filesystem_ops *filesystem_operation_table[DFS_FILESYSTE
 
 #define BUF_SIZE 1024
 
+#ifdef RT_USING_FINSH
+#include <finsh.h>
 static void test_block()
 {
 	int ret;
@@ -133,7 +135,6 @@ static void test_block()
 	LOG_I("Read (%s) partition finish! Write size %d(%dK).", FS_PARTITION_NAME, i, i / 1024);
 }
 
-#ifdef RT_USING_FINSH
 MSH_CMD_EXPORT(test_block, test filesystem block device);
 #endif
 
