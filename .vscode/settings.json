@@ -6,7 +6,7 @@
 	/* env工具目录 */
 	"ENV_ROOT": "/root/.env",
 	/* 当运行生成任务（中的刷写）时，默认使用的端口号，例如COM11就写11 */
-	"serialPortNumber": 0,
+	"serialPortNumber": 1,
 	"BUILD_ENV": "debug",
 	"files.associations": {
 		"*.h": "c",

@@ -1,5 +1,3 @@
-#define DBG_SECTION_NAME "wifi"
-
 #include "private.h"
 #include <stdio.h>
 
@@ -16,7 +14,7 @@ void wifi_status_dump()
 	rt_memset(&info, 0, sizeof(struct rt_wlan_info));
 	rt_wlan_get_info(&info);
 
-	ECHO("======================");
+	ECHO("====================== (wifi_status_dump)");
 	ECHO("station information:");
 	switch (info.security)
 	{

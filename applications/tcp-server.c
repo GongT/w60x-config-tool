@@ -5,15 +5,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <string.h>
-#include "easyflash-extend.h"
-
-#define CONFIG_END_CLOSE "{__end__}"
-
-static rt_bool_t send_string(int client, const char *value)
-{
-	LOG_I("send %d bytes string [%s] to client", strlen(value), value);
-	return send(client, value, strlen(value) + 1, 0) > 0;
-}
+#include <stdio.h>
 
 void start_tcp_server()
 {
@@ -42,18 +34,6 @@ void start_tcp_server()
 
 	LOG_I("tcpserver is running: %d", CONFIG_SERVER_IP_PORT);
 
-#define ERR_CLOSE(...)   \
-	LOG_W(__VA_ARGS__);  \
-	closesocket(client); \
-	break;
-
-#define WARN_NEXT(...)       \
-	LOG_W(__VA_ARGS__);      \
-	send_string(client, ""); \
-	continue;
-
-	static char key_buff[CONFIG_MAX_KEY_SIZE + 1] = "";
-	static char value_buff[CONFIG_MAX_VALUE_SIZE + 1] = "";
 	while (1)
 	{
 		struct sockaddr_in client_addr;
@@ -64,32 +44,8 @@ void start_tcp_server()
 			FATAL_ERROR("server accept() failed.");
 
 		LOG_I("new client: %s:%d", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-
-		while (1)
-		{
-			int got_size = recv(client, key_buff, CONFIG_MAX_KEY_SIZE, 0);
-			if (got_size <= 0)
-				ERR_CLOSE("recv failed.");
-
-			if (key_buff[got_size] != '\0')
-				ERR_CLOSE("recv data invalid.");
-
-			LOG_I("client request: %s", key_buff);
-			if (strcmp(key_buff, CONFIG_END_CLOSE) == 0)
-			{
-				closesocket(client);
-				break;
-			}
-
-			size_t v_size = get_storage_size(key_buff);
-			if (v_size <= 0)
-				WARN_NEXT("missing config!");
-
-			rt_memset(value_buff, 0, CONFIG_MAX_VALUE_SIZE);
-			ef_get_env_blob(key_buff, value_buff, CONFIG_MAX_VALUE_SIZE, NULL);
-
-			LOG_I("config value is \"%s\"", value_buff);
-			send_string(client, value_buff);
-		}
+		char cid[10];
+		snprintf(cid, 10, "s.%u", client_addr.sin_port);
+		rt_thread_startup(rt_thread_create(cid, tcp_thread, (void *)client, 2048, 5, 10));
 	}
 }

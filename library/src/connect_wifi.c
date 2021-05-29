@@ -1,99 +1,117 @@
-#define DBG_TAG "CFG:WIFI"
-
 #include "private.h"
 #include <sys/socket.h>
 #include <netdev.h>
 
+static rt_bool_t old_state = RT_FALSE;
+
+inline static const rt_bool_t is_open(rt_wlan_security_t t)
+{
+	return (t == SECURITY_WPS_OPEN) || (t == SECURITY_OPEN);
+}
+
 rt_err_t config_mode_disconnect_wifi()
 {
 	rt_wlan_scan_result_clean();
-	struct netdev *dev = netdev_get_by_name("w0");
-	if (dev != NULL)
-		netdev_dhcp_enabled(dev, 0);
-
+	netdev_dhcp_enabled(netdev_default, old_state);
 	rt_wlan_disconnect();
+	return 0;
 }
 
 rt_err_t config_mode_connect_wifi()
 {
 	rt_wlan_set_mode(RT_WLAN_DEVICE_STA_NAME, RT_WLAN_STATION);
+
+	struct netdev *dev = CONFIG_INTERFACE_NETDEV;
+	if (dev == NULL)
+	{
+#define STR_VALUE(arg) #arg
+		KPINTF_COLOR(9, "can not find netdev: " STR_VALUE(CONFIG_INTERFACE_NETDEV) "\n");
+		return RT_ERROR;
+	}
+
 	char config_wifi_ssid[128];
 	memset(config_wifi_ssid, 0, sizeof(config_wifi_ssid));
 
 	struct rt_wlan_scan_result *scan_result;
-	LOG_I("Scan config wifi: " CONFIG_SERVER_SSID);
+	KPINTF_LIGHT("Scan config wifi: " CONFIG_SERVER_SSID);
 	for (; config_wifi_ssid[0] == '\0'; rt_thread_mdelay(3000))
 	{
-		LOG_D("scanning...");
+		KPINTF_DIM("scanning...");
 		rt_wlan_scan_result_clean();
 
 		scan_result = rt_wlan_scan_sync();
 		if (!scan_result)
 		{
-			LOG_D("  * no result!");
+			KPINTF_DIM("  * no result!");
 			continue;
 		}
 		for (uint8_t index = 0; index < scan_result->num; index++)
 		{
 			struct rt_wlan_info *ele = &scan_result->info[index];
 
-			if (CONFIG_WIFI_PASS == NULL && ele->security != SECURITY_OPEN)
+			if (CONFIG_WIFI_PASS == NULL && !is_open(ele->security))
 			{
-				LOG_D("  * %.*s - private, skip", ele->ssid.len, ele->ssid.val);
+				KPINTF_DIM("  * %.*s - private: %x, skip", ele->ssid.len, ele->ssid.val, ele->security);
 				continue;
 			}
-			else if (CONFIG_WIFI_PASS != NULL && ele->security == SECURITY_OPEN)
+			else if (CONFIG_WIFI_PASS != NULL && is_open(ele->security))
 			{
-				LOG_D("  * %.*s - public, skip", ele->ssid.len, ele->ssid.val);
+				KPINTF_DIM("  * %.*s - public, skip", ele->ssid.len, ele->ssid.val);
 				continue;
 			}
 
 			if (str_prefix((char *)ele->ssid.val, sizeof(CONFIG_SERVER_SSID), CONFIG_SERVER_SSID) == 0)
 			{
-				LOG_D("  * %.*s - yes", ele->ssid.len, ele->ssid.val);
+				KPINTF_DIM("  * %.*s - yes", ele->ssid.len, ele->ssid.val);
 				strncpy(config_wifi_ssid, (char *)ele->ssid.val, ele->ssid.len);
 				break;
 			}
-			LOG_D("  * %.*s - not related", ele->ssid.len, ele->ssid.val);
+			KPINTF_DIM("  * %.*s - not related", ele->ssid.len, ele->ssid.val);
 		}
 	}
 	rt_wlan_scan_result_clean();
 
-	LOG_I("Connect WiFi: %s", config_wifi_ssid);
+	KPINTF_COLOR(14, "Connect WiFi: %s", config_wifi_ssid);
 	if (rt_wlan_connect(config_wifi_ssid, CONFIG_WIFI_PASS) != RT_EOK)
 	{
-		LOG_E("wifi connect fail.");
+		KPINTF_COLOR(9, "wifi connect fail.");
 		return RT_ERROR;
 	}
 
-	LOG_I("WiFi connected.");
+	KPINTF_COLOR(10, "WiFi connected.");
 
-	struct netdev *dev = netdev_get_by_name("w0");
-	while (dev == NULL)
-	{
-		dev = netdev_get_by_name(RT_WLAN_DEVICE_STA_NAME);
-		LOG_I("can not find netdev name: " RT_WLAN_DEVICE_STA_NAME "\n");
-		rt_thread_mdelay(5000);
-	}
-	assert(netdev_dhcp_enabled(dev, 1) == 0);
+	old_state = netdev_is_dhcp_enabled(dev);
+#ifdef CONFIG_USE_STATIC
+	ip_addr_t addr;
+	assert(netdev_dhcp_enabled(dev, RT_FALSE) == 0);
+	inet_aton("192.168.1.66", &addr);
+	netdev_set_ipaddr(dev, &addr);
+	inet_aton("192.168.1.1", &addr);
+	netdev_set_gw(dev, &addr);
+	inet_aton("255.255.255.0", &addr);
+	netdev_set_netmask(dev, &addr);
+#else
+	assert(netdev_dhcp_enabled(dev, RT_TRUE) == 0);
+#endif
 
-	uint wait = 0;
+	// ifconfig w0 192.168.1.30 192.168.1.1 255.255.255.0
+	// uint wait = 0;
 	while (!rt_wlan_is_ready())
 	{
 		rt_thread_mdelay(1000);
-		if (wait++ > 10)
-		{
-			LOG_E("Can not get IP address after 10 seconds.");
-			return RT_ETIMEOUT;
-		}
+		// if (wait++ > 10)
+		// {
+		// 	KPINTF_COLOR(9, "Can not get IP address after 10 seconds.");
+		// 	return RT_ETIMEOUT;
+		// }
 		if (!rt_wlan_is_connected())
 		{
-			LOG_E("WiFi connection broken before ready.");
+			KPINTF_COLOR(9, "WiFi connection broken before ready.");
 			return RT_EIO;
 		}
 	}
 
-	LOG_I("config WiFi is ready.");
+	KPINTF_COLOR(10, "config WiFi is ready.");
 	wifi_status_dump();
 	return RT_EOK;
 }

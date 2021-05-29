@@ -8,6 +8,8 @@ enum CONFIG_STATUS
 	CONFIG_STATUS_INIT,
 	CONFIG_STATUS_WIFI_FAIL,
 	CONFIG_STATUS_TCP_FAIL,
+	CONFIG_STATUS_NO_MAC,
+	CONFIG_STATUS_HTTP_FAIL,
 	CONFIG_STATUS_ITEM_MISSING,
 	CONFIG_STATUS_STORAGE_FAIL,
 };
@@ -22,11 +24,15 @@ extern rt_err_t save_config_item(const char *config_name, const char *value);
 	for (const char *const *__ptr_element = config_names; PTR_NAME != NULL; __ptr_element++, PTR_NAME = *__ptr_element)
 
 enum CONFIG_STATUS goto_config_mode();
+// enum CONFIG_STATUS goto_config_mode_OTA();
 void wifi_status_dump();
 
-#define CONFIG_END_CLOSE "{__end__}"
-#define END_CONFIG CONFIG_END_CLOSE, NULL
+#define END_CONFIG NULL
 
 #define DEFINE_CONFIG_NAMES(...) const char *const config_names[] = { \
 									 __VA_ARGS__                      \
 										 END_CONFIG}
+#include "rtconfig.h"
+#ifndef APPLICATION_KIND
+#error "必须在rtconfig_project.h中定义APPLICATION_KIND"
+#endif

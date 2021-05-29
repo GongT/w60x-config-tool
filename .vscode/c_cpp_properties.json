@@ -16,13 +16,9 @@
 				"-fsigned-char"
 			],
 			"compileCommands": "${workspaceFolder}/.vscode/compile_commands.json",
-			"forcedInclude": [
-				"${workspaceFolder}/rtconfig.h",
-			],
-			"includePath": [
-				"${config:RTT_ROOT}/include",
-				"${workspaceFolder}",
-			]
+			"forcedInclude": [],
+			"includePath": [],
+			"cStandard": "gnu99"
 		}
 	],
 	"version": 4

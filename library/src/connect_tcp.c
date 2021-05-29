@@ -1,32 +1,51 @@
-#define DBG_TAG "CFG:TCP"
-
 #include "private.h"
 #include <sys/socket.h>
 #include <netdb.h>
+#include <stdlib.h>
 
-static int config_socket = -1;
+#undef BUFF
+
+int config_mode_http_socket = -1;
+char *config_mode_http_buff = NULL;
 
 rt_err_t config_mode_disconnect_tcp()
 {
-	if (config_socket >= 0)
+	if (config_mode_http_socket >= 0)
 	{
-		closesocket(config_socket);
-		config_socket = -1;
+		closesocket(config_mode_http_socket);
+		config_mode_http_socket = -1;
 	}
+	if (config_mode_http_buff != NULL)
+	{
+		rt_free(config_mode_http_buff);
+		config_mode_http_buff = NULL;
+	}
+	return 0;
 }
 
 rt_err_t config_mode_connect_tcp()
 {
-	if (config_socket >= 0)
+	if (config_mode_http_socket >= 0 || config_mode_http_buff != NULL)
 	{
-		return config_socket;
+		return RT_EOK;
 	}
 
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock == -1)
 	{
-		LOG_E("Socket creation error.");
-		return RT_ERROR;
+		KPINTF_COLOR(9, "Socket creation error.");
+		return RT_EIO;
+	}
+
+	if (config_mode_http_buff == NULL)
+	{
+		config_mode_http_buff = rt_malloc(BUFF_SIZE);
+		if (config_mode_http_buff == NULL)
+		{
+			KPINTF_COLOR(9, "no memory for recv buffer.");
+			return RT_ENOMEM;
+		}
+		rt_memset(config_mode_http_buff, 0, BUFF_SIZE);
 	}
 
 	// 101a8c0:22680
@@ -36,71 +55,20 @@ rt_err_t config_mode_connect_tcp()
 	inet_pton(AF_INET, CONFIG_SERVER_IP_HOST, &server_addr.sin_addr);
 	rt_memset(&(server_addr.sin_zero), 0, sizeof(server_addr.sin_zero));
 
-	LOG_I("connect TCP server...", server_addr.sin_addr.s_addr, server_addr.sin_port);
+	KPINTF_COLOR(14, "connect TCP server %s:%d ...", CONFIG_SERVER_IP_HOST, CONFIG_SERVER_IP_PORT);
 	while (connect(sock, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == -1)
 	{
-		LOG_W("Connect fail.");
+		KPINTF_COLOR(9, "TCP connect fail.");
 		if (!rt_wlan_is_ready())
 		{
 			closesocket(sock);
-			LOG_E("wifi connect broken.");
+			KPINTF_COLOR(9, "wifi connect broken.");
 			return RT_EIO;
 		}
 		rt_thread_mdelay(5000);
 	}
-	LOG_I("connected.");
+	KPINTF_COLOR(10, "tcp connected.");
 
-	config_socket = sock;
+	config_mode_http_socket = sock;
 	return RT_EOK;
-}
-
-#define BUFF_SIZE 4096
-
-const char *config_request_data(const char *const name)
-{
-	static char *buff = NULL;
-	if (buff == NULL)
-	{
-		buff = rt_malloc(BUFF_SIZE);
-		if (buff == NULL)
-		{
-			LOG_E("no memory for recv buffer.");
-			return NULL;
-		}
-	}
-	rt_memset(buff, 0, BUFF_SIZE);
-
-	size_t name_len = strlen(name);
-
-	assert(name_len > 0);
-
-	int ret = send(config_socket, name, name_len + 1, 0);
-	if (ret <= 0)
-	{
-		LOG_E("send failed: %d", ret);
-		return NULL;
-	}
-
-	char *itr = buff;
-	while (itr - buff < BUFF_SIZE)
-	{
-		ret = recv(config_socket, itr, 1, 0);
-		if (ret <= 0)
-		{
-			LOG_E("recv failed: %d", ret);
-			return NULL;
-		}
-		LOG_I("recv: %c | %s", *itr, buff);
-
-		if (*itr == '\0')
-		{
-			LOG_I("recv: %c | %s", buff);
-			return buff;
-		}
-
-		itr++;
-	}
-
-	LOG_E("recv buffer overflow!");
-	return NULL;
 }

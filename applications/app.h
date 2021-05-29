@@ -6,3 +6,4 @@
 #include <rtdevice.h>
 
 void start_tcp_server();
+void tcp_thread(void *arg);
