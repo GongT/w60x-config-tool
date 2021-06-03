@@ -1,76 +1,131 @@
 #include "private.h"
 #include <rthw.h>
-#include <wm_fwup.h>
 #include <wm_internal_flash.h>
 
 static void dump_boot_header(const T_BOOTER *header)
 {
-	KPINTF_DIM("magic_no          = 0x%08X", header->magic_no);
-	KPINTF_DIM("img_type          = 0x%04X", header->img_type);
-	KPINTF_DIM("zip_type          = 0x%04X", header->zip_type);
-	KPINTF_DIM("run_img_addr      = 0x%08X", header->run_img_addr);
-	KPINTF_DIM("run_img_len       = 0x%08X", header->run_img_len);
-	KPINTF_DIM("run_org_checksum  = 0x%08X", header->run_org_checksum);
-	KPINTF_DIM("upd_img_len       = 0x%08X", header->upd_img_len);
-	KPINTF_DIM("upd_checksum      = 0x%08X", header->upd_checksum);
-	KPINTF_DIM("upd_no            = 0x%08X", header->upd_no);
-	KPINTF_DIM("ver               = %.16s", header->ver);
-	KPINTF_DIM("hd_checksum       = 0x%08X", header->hd_checksum);
+	KPRINTF_DIM("magic_no          = 0x%08X", header->magic_no);
+	KPRINTF_DIM("img_type          = 0x%04X", header->img_type);
+	KPRINTF_DIM("zip_type          = 0x%04X", header->zip_type);
+	KPRINTF_DIM("run_img_addr      = 0x%08X", header->run_img_addr);
+	KPRINTF_DIM("run_img_len       = 0x%08X", header->run_img_len);
+	KPRINTF_DIM("run_org_checksum  = 0x%08X", header->run_org_checksum);
+	KPRINTF_DIM("upd_img_addr      = 0x%08X", header->upd_img_addr);
+	KPRINTF_DIM("upd_img_len       = 0x%08X", header->upd_img_len);
+	KPRINTF_DIM("upd_checksum      = 0x%08X", header->upd_checksum);
+	KPRINTF_DIM("upd_no            = 0x%08X", header->upd_no);
+	KPRINTF_DIM("ver               = %.16s", header->ver);
+	KPRINTF_DIM("hd_checksum       = 0x%08X", header->hd_checksum);
+}
+static rt_bool_t write_update(T_BOOTER *header)
+{
+	int ret = tls_fls_write(CODE_UPD_HEADER_ADDR, (void *)header, sizeof(T_BOOTER));
+	if (ret != 0)
+	{
+		KPRINTF_COLOR(9, "write_update: tls_fls_write(0x%X, ..., %d) return %d", CODE_UPD_HEADER_ADDR, sizeof(T_BOOTER), ret);
+		return RT_FALSE;
+	}
+	return RT_TRUE;
+}
+
+static rt_bool_t write(size_t offset, size_t size, const char *data)
+{
+	// 0x8090000
+	size_t start = CODE_UPD_START_ADDR + offset;
+	if (start + size > USER_ADDR_START)
+	{
+		KPRINTF_COLOR(9, "update image overflow (+0x%X + 0x%X) 0x%X > 0x%X", offset, size, start + size, USER_ADDR_START);
+		return RT_FALSE;
+	}
+	KPRINTF_DIM("write: tls_fls_write(0x%X, ..., %d)", start, size);
+	int ret = tls_fls_write(start, (void *)data, size);
+	if (ret != 0)
+	{
+		KPRINTF_COLOR(9, "write: tls_fls_write(0x%X, ..., %d) return %d", start, size, ret);
+		return RT_FALSE;
+	}
+	return RT_TRUE;
 }
 
 enum CONFIG_STATUS config_mode_OTA()
 {
 	T_BOOTER current_header;
 	tls_fls_read(CODE_UPD_HEADER_ADDR, (void *)&current_header, sizeof(T_BOOTER));
-
-	rt_kprintf("current header:\n");
+	rt_kprintf("current update header: (0x%X)\n", CODE_UPD_HEADER_ADDR);
 	dump_boot_header(&current_header);
 
-	const char *header_string = config_request_data_single(APPLICATION_KIND "/application.img", 0, 8 * 14);
-	if (header_string == NULL)
+	tls_fls_read(CODE_RUN_HEADER_ADDR, (void *)&current_header, sizeof(T_BOOTER));
+	rt_kprintf("current run header: (0x%X)\n", CODE_RUN_HEADER_ADDR);
+	dump_boot_header(&current_header);
+
+	http_response resp = config_request_data_single(APPLICATION_KIND "/application.img", 0, sizeof(T_BOOTER));
+	if (!resp.ok)
 	{
-		KPINTF_COLOR(7, "can not get OTA version.");
-		return CONFIG_STATUS_SUCCESS;
+		KPRINTF_COLOR(6, "OTA header return failed.");
+		return CONFIG_STATUS_HTTP_FAIL;
+	}
+	if (resp.code == 404)
+	{
+		KPRINTF_COLOR(6, "OTA package seems not exists.");
+		return CONFIG_STATUS_ITEM_MISSING;
 	}
 
 	T_BOOTER header;
-	uint32_t *itr = (void *)&header;
-	size_t s = strlen(header_string);
-
-	if (s % 4 != 0)
-	{
-		KPINTF_COLOR(7, "OTA header length (%d) is invalid.", s);
-		return CONFIG_STATUS_SUCCESS;
-	}
-
-	char temp[17];
-	for (size_t i = 0; i < s; i += 4, itr++)
-	{
-		rt_snprintf(temp, 17, header_string + i);
-		*itr = (uint32_t)strtoul(temp, NULL, 16);
-	}
+	memcpy(&header, resp.buff, resp.size);
 
 	rt_kprintf("receive header:\n");
 	dump_boot_header(&header);
 
-	if (!tls_fwup_img_header_check(&header))
+	if (update_img_header_check(&header) == RT_FALSE)
 	{
-		KPINTF_COLOR(9, "input header is invalid");
+		KPRINTF_COLOR(9, "input header is invalid");
+		return CONFIG_STATUS_SERVER;
+	}
+
+	if (header.run_org_checksum == current_header.run_org_checksum)
+	{
+		KPRINTF_COLOR(10, "application is up to date");
 		return CONFIG_STATUS_SUCCESS;
 	}
 
-	int ret = tls_fwup_init();
-	if (ret != TLS_FWUP_STATUS_OK)
+	size_t header_size = resp.size;
+	size_t current = 0;
+	while (1)
 	{
-		KPINTF_COLOR(9, "failed start fwup: %d", ret);
-		return CONFIG_STATUS_SUCCESS;
-	}
-	u32 session_id = tls_fwup_enter(TLS_FWUP_IMAGE_SRC_WEB);
-	if (session_id == 0)
-	{
-		KPINTF_COLOR(9, "failed enter fwup");
-		return CONFIG_STATUS_SUCCESS;
+		resp = config_request_data_single(APPLICATION_KIND "/application.img", current + header_size, INSIDE_FLS_SECTOR_SIZE);
+		if (!resp.ok)
+		{
+			KPRINTF_COLOR(9, "failed read block %d", current / INSIDE_FLS_SECTOR_SIZE);
+			return CONFIG_STATUS_HTTP_FAIL;
+		}
+		if (resp.size != 0)
+		{
+			if (!write(current, INSIDE_FLS_SECTOR_SIZE, resp.buff))
+			{
+				KPRINTF_COLOR(9, "failed write block %d", current / INSIDE_FLS_SECTOR_SIZE);
+				return CONFIG_STATUS_STORAGE_FAIL;
+			}
+		}
+
+		if (resp.size < INSIDE_FLS_SECTOR_SIZE)
+		{
+			KPRINTF_COLOR(10, "update image write complete.");
+			break;
+		}
+
+		current += INSIDE_FLS_SECTOR_SIZE;
+		// led_static(LED_RED, led_state = !led_state);
+		rt_thread_yield();
 	}
 
-	return CONFIG_STATUS_SUCCESS;
+	if (!write_update(&header))
+		return CONFIG_STATUS_STORAGE_FAIL;
+
+	return CONFIG_STATUS_REBOOT_REQUIRED;
 }
+// 175
+// 313
+
+// =138
+
+// 54000

@@ -141,7 +141,7 @@ const char *dump_ascii(char chr)
 	else
 	{
 		static char out_of_range[5];
-		snprintf(out_of_range, 5, "0x%02X", chr);
+		snprintf(out_of_range, 5, "0x%02X", chr & 0xFF);
 		return out_of_range;
 	}
 }

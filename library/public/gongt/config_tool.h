@@ -5,11 +5,13 @@
 enum CONFIG_STATUS
 {
 	CONFIG_STATUS_SUCCESS = 0,
+	CONFIG_STATUS_REBOOT_REQUIRED,
 	CONFIG_STATUS_INIT,
 	CONFIG_STATUS_WIFI_FAIL,
 	CONFIG_STATUS_TCP_FAIL,
 	CONFIG_STATUS_NO_MAC,
 	CONFIG_STATUS_HTTP_FAIL,
+	CONFIG_STATUS_SERVER,
 	CONFIG_STATUS_ITEM_MISSING,
 	CONFIG_STATUS_STORAGE_FAIL,
 };
@@ -26,6 +28,8 @@ extern rt_err_t save_config_item(const char *config_name, const char *value);
 enum CONFIG_STATUS goto_config_mode();
 // enum CONFIG_STATUS goto_config_mode_OTA();
 void wifi_status_dump();
+typedef rt_bool_t (*wifi_scan_element)(const struct rt_wlan_info *);
+int wifi_scan_dump(wifi_scan_element callback);
 
 #define END_CONFIG NULL
 

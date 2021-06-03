@@ -3,7 +3,10 @@
 #include <netdb.h>
 #include <stdlib.h>
 
-static char *rtrimnl(char *buff)
+/**
+ * get first line
+ */
+static char *get_first_line(char *buff)
 {
 	char *itr = buff;
 	while (*itr != '\n' && *itr != '\r' && *itr != '\0')
@@ -14,7 +17,7 @@ static char *rtrimnl(char *buff)
 
 const char *config_mode_request_data(const char *const name, const char *const dev_id)
 {
-	rt_bool_t ret;
+	http_response ret;
 
 	assert(strlen(name) > 0);
 	assert(_SOC_ >= 0);
@@ -22,13 +25,13 @@ const char *config_mode_request_data(const char *const name, const char *const d
 	char name_buff[CONFIG_MAX_KEY_SIZE];
 
 #define __CHECK_RET()                 \
-	if (ret == RT_FALSE)              \
+	if (!ret.ok)                      \
 	{                                 \
 		config_mode_disconnect_tcp(); \
 		return NULL;                  \
 	}                                 \
-	else if (strlen(BUFF) > 0)        \
-	return rtrimnl(BUFF)
+	else if (ret.size > 0)            \
+	return get_first_line(ret.buff)
 
 	rt_snprintf(name_buff, CONFIG_MAX_KEY_SIZE, "%s/%s", dev_id, name);
 	ret = config_request_data_single(name_buff, 0, 0);
@@ -41,5 +44,6 @@ const char *config_mode_request_data(const char *const name, const char *const d
 	ret = config_request_data_single(name, 0, 0);
 	__CHECK_RET();
 
+	BUFF_CLR();
 	return BUFF;
 }

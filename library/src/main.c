@@ -25,7 +25,7 @@ static enum CONFIG_STATUS init()
 }
 
 #define WRAP_CONNECT(DEBUG_MSG, FN)   \
-	KPINTF_COLOR(9, DEBUG_MSG);       \
+	KPRINTF_COLOR(9, DEBUG_MSG);      \
 	enum CONFIG_STATUS ret = init();  \
 	if (ret == CONFIG_STATUS_SUCCESS) \
 		ret = FN();                   \
@@ -34,11 +34,15 @@ static enum CONFIG_STATUS init()
 
 inline static enum CONFIG_STATUS goto_config_mode_inline()
 {
+	int ota_result = config_mode_OTA();
+	if (ota_result != CONFIG_STATUS_SUCCESS && ota_result != CONFIG_STATUS_ITEM_MISSING)
+		return ota_result;
+
 	do
 	{
 		FOREACH_CONFIG(item)
 		{
-			KPINTF_DIM(" * %s", item);
+			KPRINTF_DIM(" * %s", item);
 		}
 	} while (0);
 
@@ -52,31 +56,31 @@ inline static enum CONFIG_STATUS goto_config_mode_inline()
 
 	FOREACH_CONFIG(item)
 	{
-		KPINTF_LIGHT("get config: %s", item);
+		KPRINTF_LIGHT("get config: %s", item);
 		const char *value = config_mode_request_data(item, mac_str);
 
 		if (value == NULL)
 		{
-			KPINTF_COLOR(11, "transform failed when get config: %s", item);
+			KPRINTF_COLOR(11, "transform failed when get config: %s", item);
 			return CONFIG_STATUS_HTTP_FAIL;
 		}
 		if (strlen(value) == 0)
 		{
-			KPINTF_COLOR(11, "missing config: %s", item);
+			KPRINTF_COLOR(11, "missing config: %s", item);
 			return CONFIG_STATUS_ITEM_MISSING;
 		}
 
-		KPINTF_LIGHT("got config [%s] is [%s]", item, value);
+		KPRINTF_LIGHT("got config [%s] is [%s]", item, value);
 		if (save_config_item(item, value) != RT_EOK)
 		{
-			KPINTF_COLOR(11, "failed save config %s!", item);
+			KPRINTF_COLOR(11, "failed save config %s!", item);
 			return CONFIG_STATUS_STORAGE_FAIL;
 		}
 	}
 
-	KPINTF_COLOR(10, "Done config mode!");
+	KPRINTF_COLOR(10, "Done config mode!");
 
-	return config_mode_OTA();
+	return CONFIG_STATUS_SUCCESS;
 }
 
 enum CONFIG_STATUS goto_config_mode()
@@ -95,10 +99,10 @@ inline static rt_bool_t disconnect()
 {
 	if (rt_wlan_is_connected())
 	{
-		KPINTF_COLOR(9, "WiFi disconnect...");
+		KPRINTF_COLOR(9, "WiFi disconnect...");
 		if (rt_wlan_disconnect() != RT_EOK)
 		{
-			KPINTF_COLOR(9, "failed disconnect WiFi.");
+			KPRINTF_COLOR(9, "failed disconnect WiFi.");
 			return RT_FALSE;
 		}
 	}

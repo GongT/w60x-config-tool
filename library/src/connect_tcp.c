@@ -33,7 +33,7 @@ rt_err_t config_mode_connect_tcp()
 	int sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock == -1)
 	{
-		KPINTF_COLOR(9, "Socket creation error.");
+		KPRINTF_COLOR(9, "Socket creation error.");
 		return RT_EIO;
 	}
 
@@ -42,7 +42,7 @@ rt_err_t config_mode_connect_tcp()
 		config_mode_http_buff = rt_malloc(BUFF_SIZE);
 		if (config_mode_http_buff == NULL)
 		{
-			KPINTF_COLOR(9, "no memory for recv buffer.");
+			KPRINTF_COLOR(9, "no memory for recv buffer.");
 			return RT_ENOMEM;
 		}
 		rt_memset(config_mode_http_buff, 0, BUFF_SIZE);
@@ -55,19 +55,19 @@ rt_err_t config_mode_connect_tcp()
 	inet_pton(AF_INET, CONFIG_SERVER_IP_HOST, &server_addr.sin_addr);
 	rt_memset(&(server_addr.sin_zero), 0, sizeof(server_addr.sin_zero));
 
-	KPINTF_COLOR(14, "connect TCP server %s:%d ...", CONFIG_SERVER_IP_HOST, CONFIG_SERVER_IP_PORT);
+	KPRINTF_COLOR(14, "connect TCP server %s:%d ...", CONFIG_SERVER_IP_HOST, CONFIG_SERVER_IP_PORT);
 	while (connect(sock, (struct sockaddr *)&server_addr, sizeof(struct sockaddr)) == -1)
 	{
-		KPINTF_COLOR(9, "TCP connect fail.");
+		KPRINTF_COLOR(9, "TCP connect fail.");
 		if (!rt_wlan_is_ready())
 		{
 			closesocket(sock);
-			KPINTF_COLOR(9, "wifi connect broken.");
+			KPRINTF_COLOR(9, "wifi connect broken.");
 			return RT_EIO;
 		}
 		rt_thread_mdelay(5000);
 	}
-	KPINTF_COLOR(10, "tcp connected.");
+	KPRINTF_COLOR(10, "tcp connected.");
 
 	config_mode_http_socket = sock;
 	return RT_EOK;
