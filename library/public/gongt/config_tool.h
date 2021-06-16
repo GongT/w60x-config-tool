@@ -26,6 +26,7 @@ extern rt_err_t save_config_item(const char *config_name, const char *value);
 	for (const char *const *__ptr_element = config_names; PTR_NAME != NULL; __ptr_element++, PTR_NAME = *__ptr_element)
 
 enum CONFIG_STATUS goto_config_mode();
+enum CONFIG_STATUS goto_config_mode_OTA();
 // enum CONFIG_STATUS goto_config_mode_OTA();
 void wifi_status_dump();
 typedef rt_bool_t (*wifi_scan_element)(const struct rt_wlan_info *);
