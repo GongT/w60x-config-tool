@@ -35,8 +35,10 @@ static enum CONFIG_STATUS init()
 inline static enum CONFIG_STATUS goto_config_mode_inline()
 {
 	int ota_result = config_mode_OTA();
-	if (ota_result != CONFIG_STATUS_SUCCESS && ota_result != CONFIG_STATUS_ITEM_MISSING)
+	if (ota_result != CONFIG_STATUS_SUCCESS && ota_result != CONFIG_STATUS_REBOOT_REQUIRED)
 		return ota_result;
+
+	config_mode_status_callback(CONFIG_STATUS_CONFIG_START);
 
 	do
 	{
@@ -56,6 +58,7 @@ inline static enum CONFIG_STATUS goto_config_mode_inline()
 
 	FOREACH_CONFIG(item)
 	{
+		config_mode_status_callback(CONFIG_STATUS_HTTP_SEND);
 		KPRINTF_LIGHT("get config: %s", item);
 		const char *value = config_mode_request_data(item, mac_str);
 
@@ -71,6 +74,8 @@ inline static enum CONFIG_STATUS goto_config_mode_inline()
 		}
 
 		KPRINTF_LIGHT("got config [%s] is [%s]", item, value);
+
+		config_mode_status_callback(CONFIG_STATUS_FLASH_WRITE);
 		if (save_config_item(item, value) != RT_EOK)
 		{
 			KPRINTF_COLOR(11, "failed save config %s!", item);
@@ -80,16 +85,19 @@ inline static enum CONFIG_STATUS goto_config_mode_inline()
 
 	KPRINTF_COLOR(10, "Done config mode!");
 
+	config_mode_status_callback(CONFIG_STATUS_CONFIG_END);
 	return CONFIG_STATUS_SUCCESS;
 }
 
 enum CONFIG_STATUS goto_config_mode()
 {
+	config_mode_status_callback(CONFIG_STATUS_WIFI_CONNECT);
 	WRAP_CONNECT("Entering config mode...", goto_config_mode_inline);
 }
 
 enum CONFIG_STATUS goto_config_mode_OTA()
 {
+	config_mode_status_callback(CONFIG_STATUS_WIFI_CONNECT);
 	WRAP_CONNECT("Entering OTA mode...", config_mode_OTA);
 }
 
@@ -124,3 +132,7 @@ static int goto_config_mode_OTA_shell(void)
 }
 MSH_CMD_EXPORT_ALIAS(goto_config_mode_OTA_shell, exec_wifi_ota, start WiFi OTA mode);
 #endif
+
+RT_WEAK void config_mode_status_callback(enum CONFIG_STATUS status)
+{
+}

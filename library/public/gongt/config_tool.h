@@ -14,12 +14,23 @@ enum CONFIG_STATUS
 	CONFIG_STATUS_SERVER,
 	CONFIG_STATUS_ITEM_MISSING,
 	CONFIG_STATUS_STORAGE_FAIL,
+	// virtual states
+	CONFIG_STATUS_WIFI_CONNECT,
+	CONFIG_STATUS_HTTP_SEND,
+	CONFIG_STATUS_FLASH_WRITE,
+	CONFIG_STATUS_OTA_START,
+	CONFIG_STATUS_OTA_NEW,
+	CONFIG_STATUS_OTA_END,
+	CONFIG_STATUS_CONFIG_START,
+	CONFIG_STATUS_CONFIG_END,
 };
 
 // you MUST define this somewhere
 extern const char *const config_names[];
 extern rt_err_t save_config_item(const char *config_name, const char *value);
 // |END| you MUST define this somewhere
+
+extern void config_mode_status_callback(enum CONFIG_STATUS status);
 
 #define FOREACH_CONFIG(PTR_NAME)            \
 	const char *PTR_NAME = config_names[0]; \

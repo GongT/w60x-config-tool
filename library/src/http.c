@@ -167,7 +167,7 @@ const http_response config_request_data_single(const char *const name, size_t st
 	char *itr = BUFF;
 	BUFF_WRITE_ITR("GET /%s HTTP/1.1\nHost: _\nContent-Length: 0\nConnection: keep-alive\nKeep-Alive: timeout=5, max=1000\n", name);
 	if (length > 0)
-		BUFF_WRITE_ITR("Range: bytes=%d-%d\n", start, start + length);
+		BUFF_WRITE_ITR("Range: bytes=%d-%d\n", start, start + length - 1);
 	BUFF_WRITE_ITR("\n");
 
 	HTTP_TRACE_IO KPRINTF_DIM("=========%s=========", BUFF);

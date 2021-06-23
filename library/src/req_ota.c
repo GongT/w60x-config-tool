@@ -19,6 +19,8 @@ static void dump_boot_header(const T_BOOTER *header)
 }
 static rt_bool_t write_update(T_BOOTER *header)
 {
+	config_mode_status_callback(CONFIG_STATUS_FLASH_WRITE);
+	KPRINTF_DIM("write_update: tls_fls_write(0x%X, ..., %d)", CODE_UPD_HEADER_ADDR, sizeof(T_BOOTER));
 	int ret = tls_fls_write(CODE_UPD_HEADER_ADDR, (void *)header, sizeof(T_BOOTER));
 	if (ret != 0)
 	{
@@ -30,6 +32,7 @@ static rt_bool_t write_update(T_BOOTER *header)
 
 static rt_bool_t write(size_t offset, size_t size, const char *data)
 {
+	config_mode_status_callback(CONFIG_STATUS_FLASH_WRITE);
 	// 0x8090000
 	size_t start = CODE_UPD_START_ADDR + offset;
 	if (start + size > USER_ADDR_START)
@@ -49,6 +52,7 @@ static rt_bool_t write(size_t offset, size_t size, const char *data)
 
 enum CONFIG_STATUS config_mode_OTA()
 {
+	config_mode_status_callback(CONFIG_STATUS_OTA_START);
 	T_BOOTER current_header;
 	tls_fls_read(CODE_UPD_HEADER_ADDR, (void *)&current_header, sizeof(T_BOOTER));
 	rt_kprintf("current update header: (0x%X)\n", CODE_UPD_HEADER_ADDR);
@@ -85,13 +89,16 @@ enum CONFIG_STATUS config_mode_OTA()
 	if (header.run_org_checksum == current_header.run_org_checksum)
 	{
 		KPRINTF_COLOR(10, "application is up to date");
+		config_mode_status_callback(CONFIG_STATUS_OTA_END);
 		return CONFIG_STATUS_SUCCESS;
 	}
+	config_mode_status_callback(CONFIG_STATUS_OTA_NEW);
 
 	size_t header_size = resp.size;
 	size_t current = 0;
 	while (1)
 	{
+		config_mode_status_callback(CONFIG_STATUS_HTTP_SEND);
 		resp = config_request_data_single(APPLICATION_KIND "/application.img", current + header_size, INSIDE_FLS_SECTOR_SIZE);
 		if (!resp.ok)
 		{
@@ -100,6 +107,11 @@ enum CONFIG_STATUS config_mode_OTA()
 		}
 		if (resp.size != 0)
 		{
+			if (resp.size > INSIDE_FLS_SECTOR_SIZE)
+			{
+				KPRINTF_COLOR(9, "invalid return length = %d, must be %d.", resp.size, INSIDE_FLS_SECTOR_SIZE);
+				return CONFIG_STATUS_SERVER;
+			}
 			if (!write(current, INSIDE_FLS_SECTOR_SIZE, resp.buff))
 			{
 				KPRINTF_COLOR(9, "failed write block %d", current / INSIDE_FLS_SECTOR_SIZE);
@@ -107,20 +119,22 @@ enum CONFIG_STATUS config_mode_OTA()
 			}
 		}
 
+		current += resp.size;
 		if (resp.size < INSIDE_FLS_SECTOR_SIZE)
 		{
 			KPRINTF_COLOR(10, "update image write complete.");
 			break;
 		}
 
-		current += INSIDE_FLS_SECTOR_SIZE;
 		// led_static(LED_RED, led_state = !led_state);
 		rt_thread_yield();
 	}
 
 	if (!write_update(&header))
 		return CONFIG_STATUS_STORAGE_FAIL;
+	KPRINTF_COLOR(10, "write update header success.");
 
+	config_mode_status_callback(CONFIG_STATUS_OTA_END);
 	return CONFIG_STATUS_REBOOT_REQUIRED;
 }
 // 175
