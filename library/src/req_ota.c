@@ -60,7 +60,11 @@ enum CONFIG_STATUS config_mode_OTA()
 
 	tls_fls_read(CODE_RUN_HEADER_ADDR, (void *)&current_header, sizeof(T_BOOTER));
 	rt_kprintf("current run header: (0x%X)\n", CODE_RUN_HEADER_ADDR);
+
 	dump_boot_header(&current_header);
+	char *url = malloc(256);
+	snprintf(url, 256, APPLICATION_KIND "/application.img?current=%.16s@0x%08X", current_header.ver, current_header.upd_checksum);
+	http_response resp = config_request_data_single(url, 0, sizeof(T_BOOTER));
 
 	http_response resp = config_request_data_single(APPLICATION_KIND "/application.img", 0, sizeof(T_BOOTER));
 	if (!resp.ok)
