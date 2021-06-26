@@ -38,6 +38,8 @@ inline static enum CONFIG_STATUS goto_config_mode_inline()
 	if (ota_result != CONFIG_STATUS_SUCCESS && ota_result != CONFIG_STATUS_REBOOT_REQUIRED)
 		return ota_result;
 
+	enum CONFIG_STATUS success_return = ota_result;
+
 	config_mode_status_callback(CONFIG_STATUS_CONFIG_START);
 
 	do
@@ -86,7 +88,7 @@ inline static enum CONFIG_STATUS goto_config_mode_inline()
 	KPRINTF_COLOR(10, "Done config mode!");
 
 	config_mode_status_callback(CONFIG_STATUS_CONFIG_END);
-	return CONFIG_STATUS_SUCCESS;
+	return success_return;
 }
 
 enum CONFIG_STATUS goto_config_mode()

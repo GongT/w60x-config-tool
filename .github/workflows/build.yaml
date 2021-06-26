@@ -7,6 +7,8 @@ on:
         required: false
         default: ""
   push:
+    paths:
+      - 'config-server-linux/**'
     branches:
       - master
 env:
