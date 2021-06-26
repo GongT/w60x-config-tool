@@ -73,7 +73,7 @@ jobs:
         timeout-minutes: 10
         run:  |
           echo '${{ secrets.GITHUB_TOKEN }}' | podman login ghcr.io -u GongT --password-stdin
-          ./config-server-linux/common/retry.sh podman pull "docker://$MIDDLE_IMAGE_FQDN"
+         config-server-linux/common/tools/retry.sh podman pull "docker://$MIDDLE_IMAGE_FQDN"
       - name: 'Build Image'
         timeout-minutes: 30
         run: |
@@ -89,7 +89,7 @@ jobs:
         env:
           PASSWD: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./config-server-linux/common/retry.sh podman push "${{ env.LAST_COMMITED_IMAGE }}" --creds "GongT:$PASSWD" "$MIDDLE_IMAGE_FQDN"
+         config-server-linux/common/tools/retry.sh podman push "${{ env.LAST_COMMITED_IMAGE }}" --creds "GongT:$PASSWD" "$MIDDLE_IMAGE_FQDN"
       - name: 'Delete old images'
         shell: bash
         run: ./_scripts_/delete-old-images.sh
