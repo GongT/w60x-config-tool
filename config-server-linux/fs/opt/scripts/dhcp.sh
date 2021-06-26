@@ -2,4 +2,5 @@
 
 set -Eeuo pipefail
 
-dnsmasq -C ./dnsmasq.conf 
+sleep 2
+exec dnsmasq -C ./dnsmasq.conf 

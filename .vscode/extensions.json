@@ -2,8 +2,11 @@
 	"recommendations": [
 		"ms-vscode.cpptools",
 		"editorconfig.editorconfig",
-		"ms-python.python",
-		"yzhang.markdown-all-in-one"
+		"yzhang.markdown-all-in-one",
+		"mads-hartmann.bash-ide-vscode",
+		"foxundermoon.shell-format",
+		"timonwong.shellcheck",
+		"raynigon.nginx-formatter"
 	],
 	"unwantedRecommendations": [
 		"ms-vscode.cpptools-extension-pack",

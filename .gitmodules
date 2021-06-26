@@ -1,3 +1,6 @@
 [submodule "rt-thread-w60x"]
 	path = rt-thread-w60x
 	url = https://github.com/GongT/rt-thread-w60x.git
+[submodule "config-server-linux/common"]
+	path = config-server-linux/common
+	url = git@github.com:GongT/containers-builder.git

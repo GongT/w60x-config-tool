@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+PROJECT_NAME="iot-devcfg"
+
+cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+source ./common/functions-install.sh
+
+echo "$MONO_ROOT_DIR/environment $PROJECT_NAME"
+
+NET_NAMESPACE="wireless"
+arg_string NET_NAMESPACE networkns "network namespace to create"
+arg_string _INTERFACE_NAME interfacename "fiber interface name"
+arg_string + WIFI wifi "wifi ap-name:password"
+arg_string + MQTT mqtt "MQTT username:password@server:port"
+arg_finish "$@"
+
+INTERFACE_NAME="$_INTERFACE_NAME"
+if [[ ! $INTERFACE_NAME ]]; then
+	INTERFACE_NAME=$(iw dev | grep Interface | awk '{print $2}' | head -1 || true)
+	if [[ $INTERFACE_NAME ]]; then
+		ALT_NAME=$(ip link show "$INTERFACE_NAME" | grep altname | awk '{print $2}')
+		if [[ $ALT_NAME ]]; then
+			INTERFACE_NAME="$ALT_NAME"
+		fi
+	fi
+fi
+if [[ ! $INTERFACE_NAME ]]; then
+	die "failed find any wireless interface"
+fi
+
+MQTT_CRED=${WIFI%@*}
+ENV_PASS=$(
+	safe_environment \
+		"WIFI_USER=${WIFI%:*}" \
+		"WIFI_PASS=${WIFI##*:}" \
+		"MQTT_HOST=${MQTT##*@}" \
+		"MQTT_USER=${MQTT_CRED%:*}" \
+		"MQTT_PASS=${MQTT_CRED##*:}"
+)
+
+auto_create_pod_service_unit
+unit_podman_image gongt/iot-config-server "$ENV_PASS"
+unit_unit Description "GongT's IoT device configure service"
+unit_depend network-online.target
+
+# unit_body Restart always
+export NET_NAMESPACE
+network_use_interface "$INTERFACE_NAME" wlan0
+
+unit_finish

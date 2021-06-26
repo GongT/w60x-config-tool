@@ -1,0 +1,14 @@
+[hostapd]
+arg[]:/bin/bash
+arg[]:/opt/scripts/hostapd.sh
+signal:SIGTERM
+
+[nginx]
+arg[]:/bin/bash
+arg[]:/opt/scripts/nginx.sh
+signal:SIGTERM
+
+[dhcp]
+arg[]:/bin/bash
+arg[]:/opt/scripts/dhcp.sh
+signal:SIGTERM
