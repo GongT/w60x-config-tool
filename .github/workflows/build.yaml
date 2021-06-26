@@ -89,7 +89,7 @@ jobs:
         env:
           PASSWD: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ./_scripts_/retry.sh podman push "${{ env.LAST_COMMITED_IMAGE }}" --creds "GongT:$PASSWD" "$MIDDLE_IMAGE_FQDN"
+          ./config-server-linux/common/retry.sh podman push "${{ env.LAST_COMMITED_IMAGE }}" --creds "GongT:$PASSWD" "$MIDDLE_IMAGE_FQDN"
       - name: 'Delete old images'
         shell: bash
         run: ./_scripts_/delete-old-images.sh
