@@ -74,11 +74,11 @@ jobs:
         run:  |
           echo '${{ secrets.GITHUB_TOKEN }}' | podman login ghcr.io -u GongT --password-stdin
           ./_scripts_/retry.sh podman pull "docker://$MIDDLE_IMAGE_FQDN"
-        # continue-on-error: true
       - name: 'Build Image'
         timeout-minutes: 30
         run: |
           echo '${{ secrets.GITHUB_TOKEN }}' | podman login ghcr.io -u GongT --password-stdin
+          cd config-server-linux
           bash build.sh
         env:
           REWRITE_IMAGE_NAME: ${{ env.MIDDLE_IMAGE_FQDN }}
