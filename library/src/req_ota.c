@@ -1,6 +1,7 @@
 #include "private.h"
 #include <rthw.h>
 #include <wm_internal_flash.h>
+#include <wm_crypto_hard.h>
 
 static void dump_boot_header(const T_BOOTER *header)
 {
@@ -19,6 +20,11 @@ static void dump_boot_header(const T_BOOTER *header)
 }
 static rt_bool_t write_update(T_BOOTER *header)
 {
+	psCrcContext_t crcContext;
+	tls_crypto_crc_init(&crcContext, 0xFFFFFFFF, CRYPTO_CRC_TYPE_32, 3);
+	tls_crypto_crc_update(&crcContext, (unsigned char *)header, sizeof(T_BOOTER) - 4);
+	tls_crypto_crc_final(&crcContext, &header->hd_checksum);
+
 	config_mode_status_callback(CONFIG_STATUS_FLASH_WRITE);
 	KPRINTF_DIM("write_update: tls_fls_write(0x%X, ..., %d)", CODE_UPD_HEADER_ADDR, sizeof(T_BOOTER));
 	int ret = tls_fls_write(CODE_UPD_HEADER_ADDR, (void *)header, sizeof(T_BOOTER));
@@ -95,6 +101,8 @@ enum CONFIG_STATUS config_mode_OTA()
 		return CONFIG_STATUS_SUCCESS;
 	}
 	config_mode_status_callback(CONFIG_STATUS_OTA_NEW);
+
+	header.upd_no = current_header.upd_no + 1;
 
 	size_t header_size = resp.size;
 	size_t current = 0;

@@ -24,14 +24,16 @@ const char *config_mode_request_data(const char *const name, const char *const d
 
 	char name_buff[CONFIG_MAX_KEY_SIZE];
 
-#define __CHECK_RET()                 \
-	if (!ret.ok)                      \
-	{                                 \
-		config_mode_disconnect_tcp(); \
-		return NULL;                  \
-	}                                 \
-	else if (ret.size > 0)            \
-	return get_first_line(ret.buff)
+#define __CHECK_RET()                    \
+	if (!ret.ok)                         \
+	{                                    \
+		config_mode_disconnect_tcp();    \
+		return NULL;                     \
+	}                                    \
+	else if (ret.size > 0)               \
+	{                                    \
+		return get_first_line(ret.buff); \
+	}
 
 	rt_snprintf(name_buff, CONFIG_MAX_KEY_SIZE, "%s/%s", dev_id, name);
 	ret = config_request_data_single(name_buff, 0, 0);

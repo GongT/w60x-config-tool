@@ -75,7 +75,7 @@ inline static enum CONFIG_STATUS goto_config_mode_inline()
 			return CONFIG_STATUS_ITEM_MISSING;
 		}
 
-		KPRINTF_LIGHT("got config [%s] is [%s]", item, value);
+		KPRINTF_LIGHT("got config [%s] is <%d>[%s]", item, strlen(value), value);
 
 		config_mode_status_callback(CONFIG_STATUS_FLASH_WRITE);
 		if (save_config_item(item, value) != RT_EOK)
