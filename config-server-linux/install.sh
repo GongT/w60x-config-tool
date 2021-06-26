@@ -18,10 +18,12 @@ arg_finish "$@"
 
 INTERFACE_NAME="$_INTERFACE_NAME"
 if [[ ! $INTERFACE_NAME ]]; then
+	info_log "detect first wireless interface..."
 	INTERFACE_NAME=$(iw dev | grep Interface | awk '{print $2}' | head -1 || true)
 	if [[ $INTERFACE_NAME ]]; then
-		ALT_NAME=$(ip link show "$INTERFACE_NAME" | grep altname | awk '{print $2}')
+		ALT_NAME=$(ip link show "$INTERFACE_NAME" | grep altname | awk '{print $2}' | head -1 || true)
 		if [[ $ALT_NAME ]]; then
+			info_log "    altname: $ALT_NAME"
 			INTERFACE_NAME="$ALT_NAME"
 		fi
 	fi
@@ -29,6 +31,8 @@ fi
 if [[ ! $INTERFACE_NAME ]]; then
 	die "failed find any wireless interface"
 fi
+
+info_warn "using $INTERFACE_NAME"
 
 MQTT_CRED=${WIFI%@*}
 ENV_PASS=$(
@@ -41,7 +45,8 @@ ENV_PASS=$(
 )
 
 auto_create_pod_service_unit
-unit_podman_image gongt/iot-config-server "$ENV_PASS"
+unit_podman_image gongt/iot-config-server
+unit_podman_arguments "$ENV_PASS"
 unit_unit Description "GongT's IoT device configure service"
 unit_depend network-online.target
 
