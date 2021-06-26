@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       brand_new:
-        description: 'Skip pull last image'     
+        description: 'Skip pull last image'
         required: false
         default: ''
   push:
@@ -31,9 +31,9 @@ jobs:
   sync_old:
     name: 'sync latest version from docker.io to ghcr.io'
     runs-on: ubuntu-latest
-    if: github.event.inputs.brand_new == ''
     steps:
       - name: 'sync'
+        if: github.event.inputs.brand_new == ''
         timeout-minutes: 5
         shell: bash
         run: |
