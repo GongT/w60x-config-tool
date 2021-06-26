@@ -73,7 +73,7 @@ jobs:
         timeout-minutes: 10
         run:  |
           echo '${{ secrets.GITHUB_TOKEN }}' | podman login ghcr.io -u GongT --password-stdin
-          ./_scripts_/retry.sh podman pull "docker://$MIDDLE_IMAGE_FQDN"
+          ./config-server-linux/common/retry.sh podman pull "docker://$MIDDLE_IMAGE_FQDN"
       - name: 'Build Image'
         timeout-minutes: 30
         run: |
