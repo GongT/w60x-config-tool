@@ -3,12 +3,12 @@ on:
   workflow_dispatch:
     inputs:
       brand_new:
-        description: 'Skip pull last image'
+        description: "Skip pull last image"
         required: false
-        default: ''
+        default: ""
   push:
     branches:
-    - master
+      - master
 env:
   FINAL_IMAGE_FQDN: docker.io/gongt/iot-config-server
   MIDDLE_IMAGE_FQDN: ghcr.io/gongt/iot-config-server
@@ -29,10 +29,10 @@ jobs:
           DELETE: "yes"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   sync_old:
-    name: 'sync latest version from docker.io to ghcr.io'
+    name: "sync latest version from docker.io to ghcr.io"
     runs-on: ubuntu-latest
     steps:
-      - name: 'sync'
+      - name: "sync"
         if: github.event.inputs.brand_new == ''
         timeout-minutes: 5
         shell: bash
@@ -42,13 +42,13 @@ jobs:
           echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u GongT --password-stdin
           time docker push "$MIDDLE_IMAGE_FQDN"
   build:
-    name: 'standalone build iot-config-server image'
+    name: "standalone build iot-config-server image"
     runs-on: [self-hosted, linux]
     needs: [sync_old]
     env:
       PROXY: http://proxy-server.:3271
     steps:
-      - name: 'Force Reset'
+      - name: "Force Reset"
         timeout-minutes: 1
         shell: bash
         run: |
@@ -57,24 +57,24 @@ jobs:
             git clean -ffdx || true
             git submodule foreach bash -c "git clean -ffdx" || true
           fi
-      - name: 'Checkout'
+      - name: "Checkout"
         uses: actions/checkout@v2
         timeout-minutes: 5
         env:
           http_proxy: "http://proxy-server.:3271"
           https_proxy: "http://proxy-server.:3271"
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
           clean: true
           fetch-depth: 0
-      - name: 'Fetch exists image from registry'
+      - name: "Fetch exists image from registry"
         shell: bash
         if: github.event.inputs.brand_new == ''
         timeout-minutes: 10
-        run:  |
+        run: |
           echo '${{ secrets.GITHUB_TOKEN }}' | podman login ghcr.io -u GongT --password-stdin
-         config-server-linux/common/tools/retry.sh podman pull "docker://$MIDDLE_IMAGE_FQDN"
-      - name: 'Build Image'
+          config-server-linux/common/tools/retry.sh podman pull "docker://$MIDDLE_IMAGE_FQDN"
+      - name: "Build Image"
         timeout-minutes: 30
         run: |
           echo '${{ secrets.GITHUB_TOKEN }}' | podman login ghcr.io -u GongT --password-stdin
@@ -83,22 +83,22 @@ jobs:
         env:
           REWRITE_IMAGE_NAME: ${{ env.MIDDLE_IMAGE_FQDN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: 'Publish to registry'
+      - name: "Publish to registry"
         timeout-minutes: 5
         shell: bash
         env:
           PASSWD: ${{ secrets.GITHUB_TOKEN }}
         run: |
-         config-server-linux/common/tools/retry.sh podman push "${{ env.LAST_COMMITED_IMAGE }}" --creds "GongT:$PASSWD" "$MIDDLE_IMAGE_FQDN"
-      - name: 'Delete old images'
+          config-server-linux/common/tools/retry.sh podman push "${{ env.LAST_COMMITED_IMAGE }}" --creds "GongT:$PASSWD" "$MIDDLE_IMAGE_FQDN"
+      - name: "Delete old images"
         shell: bash
         run: ./_scripts_/delete-old-images.sh
   upload_new:
-    name: 'sync new version from ghcr.io to docker.io'
+    name: "sync new version from ghcr.io to docker.io"
     needs: [build]
     runs-on: ubuntu-latest
     steps:
-      - name: 'sync'
+      - name: "sync"
         timeout-minutes: 5
         shell: bash
         run: |
