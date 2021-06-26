@@ -65,8 +65,6 @@ enum CONFIG_STATUS config_mode_OTA()
 	char *url = malloc(256);
 	snprintf(url, 256, APPLICATION_KIND "/application.img?current=%.16s@0x%08X", current_header.ver, current_header.upd_checksum);
 	http_response resp = config_request_data_single(url, 0, sizeof(T_BOOTER));
-
-	http_response resp = config_request_data_single(APPLICATION_KIND "/application.img", 0, sizeof(T_BOOTER));
 	if (!resp.ok)
 	{
 		KPRINTF_COLOR(6, "OTA header return failed.");
