@@ -34,7 +34,7 @@ fi
 
 info_warn "using $INTERFACE_NAME"
 
-MQTT_CRED=${WIFI%@*}
+MQTT_CRED=${MQTT%@*}
 ENV_PASS=$(
 	safe_environment \
 		"WIFI_USER=${WIFI%:*}" \
