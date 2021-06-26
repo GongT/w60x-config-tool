@@ -92,7 +92,8 @@ jobs:
           config-server-linux/common/tools/retry.sh podman push "${{ env.LAST_COMMITED_IMAGE }}" --creds "GongT:$PASSWD" "$MIDDLE_IMAGE_FQDN"
       - name: "Delete old images"
         shell: bash
-        run: ./_scripts_/delete-old-images.sh
+        run: |
+          bash ./config-server-linux/common/tools/delete-old-images.sh
   upload_new:
     name: "sync new version from ghcr.io to docker.io"
     needs: [build]
