@@ -50,6 +50,9 @@ unit_podman_arguments "$ENV_PASS"
 unit_unit Description "GongT's IoT device configure service"
 unit_depend network-online.target
 
+unit_fs_bind data/iot /data/ota
+unit_fs_bind config/iot /data/configs
+
 # unit_body Restart always
 export NET_NAMESPACE
 network_use_interface "$INTERFACE_NAME" wlan0
