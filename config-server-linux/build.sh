@@ -24,7 +24,7 @@ copy_fs_files() {
 buildah_cache2 iot-config-server-result hash_fs_files copy_fs_files
 ### 复制文件 END
 
-buildah_config iot-config-server-result --author "GongT <admin@gongt.me>" --created-by "#MAGIC!" --label name=gongt/iot-config-server "$RESULT"
+buildah_config iot-config-server-result --author "GongT <admin@gongt.me>" --created-by "#MAGIC!" --label name=gongt/iot-config-server
 
 RESULT=$(create_if_not "iot-config-server-commit" "$BUILDAH_LAST_IMAGE")
 buildah commit "$RESULT" gongt/iot-config-server
