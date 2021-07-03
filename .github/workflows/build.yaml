@@ -2,55 +2,37 @@ name: "iot-config-server"
 on:
   workflow_dispatch:
     inputs:
-      brand_new:
-        description: "Skip pull last image"
+      brandNew:
+        description: Skip pull last image
         required: false
         default: ""
   push:
     paths:
-      - 'config-server-linux/**'
+      - "config-server-linux/**"
     branches:
       - master
 env:
-  FINAL_IMAGE_FQDN: docker.io/gongt/iot-config-server
-  MIDDLE_IMAGE_FQDN: ghcr.io/gongt/iot-config-server
-  DOCKER_CACHE_CENTER: ghcr.io/gongt
-  DOCKER_CACHE_CENTER_AUTH: GongT:${{ secrets.GITHUB_TOKEN }}
   NODE_ENV: production
-  http_proxy: ""
-  https_proxy: ""
-  all_proxy: ""
+  PROJECT_NAME: "iot-config-server"
 jobs:
   cancel:
     name: Cancel Previous Runs
     runs-on: ubuntu-latest
     steps:
       - name: cancel running workflows
+        timeout-minutes: 5
         uses: GongT/cancel-previous-workflows@6dd7af8389c9434cc893fd33b58609e73db49fbe
         env:
           DELETE: "yes"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  sync_old:
-    name: "sync latest version from docker.io to ghcr.io"
-    runs-on: ubuntu-latest
-    steps:
-      - name: "sync"
-        if: github.event.inputs.brand_new == ''
-        timeout-minutes: 5
-        shell: bash
-        run: |
-          time docker pull "$FINAL_IMAGE_FQDN"
-          docker tag "$FINAL_IMAGE_FQDN" "$MIDDLE_IMAGE_FQDN"
-          echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u GongT --password-stdin
-          time docker push "$MIDDLE_IMAGE_FQDN"
+
   build:
-    name: "standalone build iot-config-server image"
-    runs-on: [self-hosted, linux]
-    needs: [sync_old]
-    env:
-      PROXY: http://proxy-server.:3271
+    name: "生成镜像"
+    runs-on: ubuntu-latest
+    outputs:
+      INDEX_ARRAY: ${{ steps.result.outputs.INDEX_ARRAY }}
     steps:
-      - name: "Force Reset"
+      - name: "强制清理项目（如果有）"
         timeout-minutes: 1
         shell: bash
         run: |
@@ -59,53 +41,78 @@ jobs:
             git clean -ffdx || true
             git submodule foreach bash -c "git clean -ffdx" || true
           fi
-      - name: "Checkout"
+
+      - name: "获取代码"
         uses: actions/checkout@v2
-        timeout-minutes: 5
-        env:
-          http_proxy: "http://proxy-server.:3271"
-          https_proxy: "http://proxy-server.:3271"
+        timeout-minutes: 1
         with:
           submodules: "recursive"
           clean: true
-          fetch-depth: 0
-      - name: "Fetch exists image from registry"
+          fetch-depth: 2
+
+      - name: "初始化登录信息和基本环境"
         shell: bash
-        if: github.event.inputs.brand_new == ''
-        timeout-minutes: 10
-        run: |
-          echo '${{ secrets.GITHUB_TOKEN }}' | podman login ghcr.io -u GongT --password-stdin
-          config-server-linux/common/tools/retry.sh podman pull "docker://$MIDDLE_IMAGE_FQDN"
-      - name: "Build Image"
-        timeout-minutes: 30
-        run: |
-          echo '${{ secrets.GITHUB_TOKEN }}' | podman login ghcr.io -u GongT --password-stdin
-          cd config-server-linux
-          bash build.sh
+        timeout-minutes: 2
         env:
-          REWRITE_IMAGE_NAME: ${{ env.MIDDLE_IMAGE_FQDN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: "Publish to registry"
+          SECRET_PASSWORD: ${{ secrets.SECRET_PASSWORD }}
+        run: bash .github/scripts/prepare-secrets.sh
+
+      - name: "缓存下载和软件包数据"
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.SYSTEM_COMMON_CACHE }}
+          key: common-cache-${{ hashFiles('config-server-linux') }}
+          restore-keys: |
+            common-cache-
+
+      - name: "从ghcr.io获取上次生成的镜像"
+        shell: bash
+        if: github.event.inputs.brandNew == ''
+        timeout-minutes: 1
+        run: ./.github/scripts/retry.sh podman pull "docker://ghcr.io/gongt/$PROJECT_NAME"
+
+      - name: "运行构建过程"
+        shell: bash
+        timeout-minutes: 30
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash .github/scripts/build.sh
+
+      - id: result
+        name: "输出状态"
+        shell: bash
+        env:
+          SECRET_PASSWORD: ${{ secrets.SECRET_PASSWORD }}
+        run: bash .github/scripts/publish_create_index.sh
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      matrix:
+        index: ${{ fromJson(needs.build.outputs.INDEX_ARRAY) }}
+      fail-fast: false
+    steps:
+      - name: "获取代码"
+        uses: actions/checkout@v2
+        timeout-minutes: 1
+        with:
+          submodules: "recursive"
+          clean: true
+          fetch-depth: 2
+
+      - name: "初始化登录信息和基本环境"
+        shell: bash
+        timeout-minutes: 2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SECRET_PASSWORD: ${{ secrets.SECRET_PASSWORD }}
+        run: bash .github/scripts/prepare-secrets.sh
+
+      - name: "发布镜像"
         timeout-minutes: 5
         shell: bash
         env:
-          PASSWD: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          config-server-linux/common/tools/retry.sh podman push "${{ env.LAST_COMMITED_IMAGE }}" --creds "GongT:$PASSWD" "$MIDDLE_IMAGE_FQDN"
-      - name: "Delete old images"
-        shell: bash
-        run: |
-          bash ./config-server-linux/common/tools/delete-old-images.sh
-  upload_new:
-    name: "sync new version from ghcr.io to docker.io"
-    needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-      - name: "sync"
-        timeout-minutes: 5
-        shell: bash
-        run: |
-          echo '${{ secrets.DockerPassword }}' | docker login docker.io -u gongt --password-stdin
-          time docker pull "$MIDDLE_IMAGE_FQDN"
-          docker tag "$MIDDLE_IMAGE_FQDN" "$FINAL_IMAGE_FQDN"
-          time docker push "$FINAL_IMAGE_FQDN"
+          SECRET_PASSWORD: ${{ secrets.SECRET_PASSWORD }}
+        run: bash .github/scripts/publish_all_targets.sh ${{ matrix.index }}
