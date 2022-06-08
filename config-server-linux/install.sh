@@ -7,7 +7,8 @@ PROJECT_NAME="iot-devcfg"
 cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 source ./common/functions-install.sh
 
-echo "$MONO_ROOT_DIR/environment $PROJECT_NAME"
+echo "LOAD: $MONO_ROOT_DIR/environment $PROJECT_NAME"
+echo "LOAD: ~/environment $PROJECT_NAME"
 
 NET_NAMESPACE="wireless"
 arg_string NET_NAMESPACE networkns "network namespace to create"
@@ -16,7 +17,7 @@ arg_string + WIFI wifi "wifi ap-name:password"
 arg_string + MQTT mqtt "MQTT username:password@server:port"
 arg_finish "$@"
 
-INTERFACE_NAME="$_INTERFACE_NAME"
+INTERFACE_NAME="${_INTERFACE_NAME:-}"
 if [[ ! $INTERFACE_NAME ]]; then
 	info_log "detect first wireless interface..."
 	INTERFACE_NAME=$(iw dev | grep Interface | awk '{print $2}' | head -1 || true)
