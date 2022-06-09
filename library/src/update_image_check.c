@@ -26,7 +26,7 @@ rt_bool_t update_img_header_check(const T_BOOTER *img_param)
 
 	psCrcContext_t crcContext;
 	tls_crypto_crc_init(&crcContext, 0xFFFFFFFF, CRYPTO_CRC_TYPE_32, 3);
-	for (uint i = 0; i < (sizeof(T_BOOTER) - 4) / 4; i++)
+	for (size_t i = 0; i < (sizeof(T_BOOTER) - 4) / 4; i++)
 	{
 		int value = *(((int *)img_param) + i);
 		tls_crypto_crc_update(&crcContext, (unsigned char *)&value, 4);
