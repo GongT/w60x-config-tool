@@ -47,9 +47,11 @@ ENV_PASS=$(
 
 auto_create_pod_service_unit
 unit_podman_image gongt/iot-config-server
+unit_podman_image_pull never
 unit_podman_arguments "$ENV_PASS"
 unit_unit Description "GongT's IoT device configure service"
 unit_depend network-online.target
+unit_start_notify output 'AP-ENABLED'
 
 unit_fs_bind data/iot /data/ota
 unit_fs_bind config/iot /data/configs
